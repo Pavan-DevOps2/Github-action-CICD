@@ -22,11 +22,20 @@ jobs:
     - name: Install Maven
       run: |
         MAVEN_VERSION=3.9.9
-        wget https://dlcdn.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz
-        sudo tar -xzf apache-maven-${MAVEN_VERSION}-bin.tar.gz -C /opt
-        sudo ln -sfn /opt/apache-maven-${MAVEN_VERSION} /opt/maven
-        echo "M2_HOME=/opt/maven" >> $GITHUB_ENV
-        echo "PATH=/opt/maven/bin:$PATH" >> $GITHUB_ENV  
+        MAVEN_DIR=/opt/maven/apache-maven-${MAVEN_VERSION}
+        URL="https://downloads.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+        if ! curl -f -L "$URL" -o maven.tar.gz; then
+        echo "Main site failed, trying archive..."
+        URL="https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+        curl -f -L "$URL" -o maven.tar.gz
+        fi
+        sudo mkdir -p /opt/maven
+        sudo tar -xzf maven.tar.gz -C /opt/maven
+        sudo ln -sfn "$MAVEN_DIR" /opt/maven/latest
+        echo "export PATH=/opt/maven/latest/bin:\$PATH" >> $GITHUB_ENV
+
+    - name: Verify Maven version
+      run: mvn -v
         
     - name: Build with Maven
       run: mvn compile
